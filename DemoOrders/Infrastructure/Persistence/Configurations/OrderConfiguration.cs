@@ -20,8 +20,7 @@ namespace DemoOrders.Infrastructure.Persistence.Configurations
                 .HasMaxLength(100);
 
             builder.Property(o => o.Status)
-                .IsRequired()
-                .HasConversion<string>();
+                .IsRequired();
 
             builder.Property(o => o.OrderTime)
                 .IsRequired()
@@ -30,7 +29,6 @@ namespace DemoOrders.Infrastructure.Persistence.Configurations
 
             builder.Property(o => o.PaymentMethod)
                 .IsRequired()
-                .HasConversion<string>()
                 .HasMaxLength(20);
 
             builder.Property(o => o.DeliveryAddress)
@@ -46,7 +44,6 @@ namespace DemoOrders.Infrastructure.Persistence.Configurations
 
             builder.Property(o => o.Currency)
                 .IsRequired()
-                .HasConversion<string>()
                 .HasMaxLength(3);
 
             // Relationship with OrderItem: Order has many OrderItems

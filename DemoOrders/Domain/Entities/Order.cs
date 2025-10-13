@@ -21,7 +21,6 @@ namespace DemoOrders.Domain.Entities
         public DateTime OrderTime { get; set; } = DateTime.Now;
 
         [Required]
-        [MaxLength(20)]
         public OrderPaymentMethod PaymentMethod { get; set; } = OrderPaymentMethod.Cash;
 
         [Required]
@@ -37,7 +36,6 @@ namespace DemoOrders.Domain.Entities
         public string? Note { get; set; }
 
         [Required]
-        [MaxLength(3)]
         public OrderCurrency Currency { get; set; } = OrderCurrency.EUR;
 
         // Navigation property for related order items
