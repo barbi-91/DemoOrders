@@ -7,6 +7,12 @@ namespace DemoOrders.API.Filters
     [ApiController]
     public class ErrorController : ControllerBase
     {
+        private readonly ILogger<ErrorController> _logger;
+        public ErrorController(ILogger<ErrorController> logger)
+        {
+            _logger = logger;
+        }
+
         [Route("/error")]
         [HttpGet]
         public IActionResult HandleError()
@@ -14,7 +20,8 @@ namespace DemoOrders.API.Filters
             var context = HttpContext.Features.Get<IExceptionHandlerFeature>();
             var exception = context?.Error;
 
-            // You can log the exception here if needed
+            // Loging the exception here if needed
+            _logger.LogError(exception, "Unhandled exception occurred.");
 
             return Problem(
                 detail: exception?.Message,

@@ -11,30 +11,41 @@ namespace DemoOrders.Application.Services
     {
         private readonly IOrderRepository _repository;
         private readonly IMapper _mapper;
+        private readonly ILogger<OrderService> _logger;
 
-        public OrderService(IOrderRepository repository, IMapper mapper)
+        public OrderService(IOrderRepository repository, IMapper mapper, ILogger<OrderService> logger)
         {
             _repository = repository;
             _mapper = mapper;
+            _logger = logger;
         }
 
         public async Task<OrderDto> CreateOrderAsync(CreateOrderDto createOrderDto, CancellationToken cancellationToken)
         {
-            // Map the CreateOrderDto to an Order entity
-            Order createOrder = _mapper.Map<Order>(createOrderDto);
+            try
+            {
+                // Map the CreateOrderDto to an Order entity
+                Order createOrder = _mapper.Map<Order>(createOrderDto);
 
-            // Set the initial status of the order to Pending
-            createOrder.Status = OrderStatus.Pending;
+                // Set the initial status of the order to Pending
+                createOrder.Status = OrderStatus.Pending;
 
-            // Set the order time to the current time
-            createOrder.OrderTime = DateTime.Now;
+                // Set the order time to the current time
+                createOrder.OrderTime = DateTime.Now;
 
-            // Use the repository to create the order and get the created entity with its generated ID
-            Order createdOrder = await _repository.CreateOrderAsync(createOrder, cancellationToken);
+                // Use the repository to create the order and get the created entity with its generated ID
+                Order createdOrder = await _repository.CreateOrderAsync(createOrder, cancellationToken);
 
-            // Map the created Order entity back to an OrderDto
-            OrderDto createdOrderDto = _mapper.Map<OrderDto>(createdOrder);
-            return createdOrderDto;
+                // Map the created Order entity back to an OrderDto
+                OrderDto createdOrderDto = _mapper.Map<OrderDto>(createdOrder);
+                _logger.LogInformation("Order created successfully with ID {OrderId}", createdOrder.Id);
+                return createdOrderDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating order for customer {CustomerName}", createOrderDto.CustomerName);
+                throw;
+            }
         }
     }
 }

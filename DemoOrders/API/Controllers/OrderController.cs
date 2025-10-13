@@ -9,10 +9,12 @@ namespace DemoOrders.API.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
+        private readonly ILogger<OrderController> _logger;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(IOrderService orderService, ILogger<OrderController> logger)
         {
             _orderService = orderService;
+            _logger = logger;
         }
 
         // Create a new order
@@ -23,16 +25,18 @@ namespace DemoOrders.API.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Invalid model state for order creation: {@ModelState}", ModelState);
                 return BadRequest(ModelState);
             }
             try
             {
                 var orderDto = await _orderService.CreateOrderAsync(createOrderDto, cancellationToken);
+                _logger.LogInformation("Order created successfully for customer {CustomerName} with ID {OrderId}", orderDto.CustomerName, orderDto.Id);
                 return Ok(orderDto);
             }
             catch (Exception ex)
             {
-                // TODO: log this exception
+                _logger.LogError(ex, "Error occurred while creating order for customer {CustomerName}", createOrderDto.CustomerName);
                 return BadRequest(new { errorMessage = "Error has occured!" });
             }
         }
