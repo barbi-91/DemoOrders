@@ -1,5 +1,8 @@
-
 using DemoOrders.Application.Abstractions;
+using DemoOrders.Application.Abstration.Repositories;
+using DemoOrders.Application.Abstration.Service;
+using DemoOrders.Application.Mapping;
+using DemoOrders.Application.Services;
 using DemoOrders.Infrastructure.Persistence.AppDbContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -16,6 +19,7 @@ namespace DemoOrders
             // Add services to the container.
 
             builder.Services.AddControllers();
+
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
 
@@ -25,6 +29,10 @@ namespace DemoOrders
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "Restaurant", Version = "v1" });
             });
+
+            builder.Services.AddAutoMapper(typeof(MappingProfile));
+            builder.Services.AddScoped<IOrderService, OrderService>();
+            builder.Services.AddScoped<IOrderRepository, OrderRepository>();
             builder.Services.AddDbContext<IApplicationDbContext, ApplicationDbContext>(options =>
                options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
@@ -43,7 +51,8 @@ namespace DemoOrders
                 });
 
             }
-
+            // Handles exceptions globally
+            app.UseExceptionHandler("/error");
 
             app.UseHttpsRedirection();
 
