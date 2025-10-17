@@ -1,5 +1,6 @@
 ﻿using DemoOrders.Application.Abstration.Service;
 using DemoOrders.Application.Dtos;
+using DemoOrders.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DemoOrders.API.Controllers
@@ -28,6 +29,13 @@ namespace DemoOrders.API.Controllers
                 _logger.LogWarning("Invalid model state for order creation: {@ModelState}", ModelState);
                 return BadRequest(ModelState);
             }
+
+            if (!Enum.IsDefined(typeof(OrderPaymentMethod), createOrderDto.PaymentMethod))
+                throw new Exception("Invalid payment method.");
+
+            if (!Enum.IsDefined(typeof(OrderCurrency), createOrderDto.Currency))
+                throw new Exception("Invalid currency.");
+
             try
             {
                 var orderDto = await _orderService.CreateOrderAsync(createOrderDto, cancellationToken);

@@ -12,6 +12,7 @@ namespace DemoOrders.Tests.Services
 {
     public class OrderServiceTests
     {
+        // Test for CreateOrderAsync for successful order creation with mocked dependencies 
         [Fact]
         public async Task CreateOrderAsync_ReturnOrderDto()
         {
@@ -84,5 +85,42 @@ namespace DemoOrders.Tests.Services
             Assert.Single(result.Items);
             Assert.Equal(expectedOrder.Items[0].ProductName, result.Items[0].ProductName);
         }
+
+
+
+        // Test for CreateOrderAsync to verify exception is thrown when creating an order without items
+        [Fact]
+        public async Task CreateOrderAsync_WithoutItems_ThrowsException()
+        {
+            // Arrange
+            // Mock repository
+            var orderRepositoryMock = new Mock<IOrderRepository>();
+            // Mock logger
+            var loggerMock = new Mock<ILogger<OrderService>>();
+            // AutoMapper with actual mapping profile
+            var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+            var mapper = config.CreateMapper();
+
+            // CreateOrderDto without items
+            var createOrderDto = new CreateOrderDto
+            {
+                CustomerName = "Test User",
+                PaymentMethod = OrderPaymentMethod.Cash,
+                DeliveryAddress = "Test Address",
+                ContactNumber = "123456789",
+                Note = "",
+                Currency = OrderCurrency.EUR,
+                Items = new List<CreateOrderItemDto>() // Empty list
+            };
+            // Create service instance
+            var orderService = new OrderService(orderRepositoryMock.Object, mapper, loggerMock.Object);
+
+            // Act & Assert
+            // Verify that an exception is thrown when creating an order without items
+            await Assert.ThrowsAsync<Exception>(() =>
+                orderService.CreateOrderAsync(createOrderDto, CancellationToken.None));
+        }
+
+
     }
 }

@@ -1,6 +1,7 @@
 using DemoOrders.API.Controllers;
 using DemoOrders.Application.Abstration.Service;
 using DemoOrders.Application.Dtos;
+using DemoOrders.Domain.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -9,6 +10,7 @@ namespace DemoOrders.Tests.Controllers
 {
     public class OrderControllerTests
     {
+        // Test for CreateOrder action in OrderController with mocked IOrderService and ILogger and verifying Ok result
         [Fact]
         public async Task CreateOrder_ReturnsOk_WhenOrderIsCreated()
         {
@@ -36,10 +38,10 @@ namespace DemoOrders.Tests.Controllers
             var createOrderDto = new CreateOrderDto
             {
                 CustomerName = "Test User",
-                PaymentMethod = 0,
+                PaymentMethod = OrderPaymentMethod.CreditCard,
                 DeliveryAddress = "Test Address",
                 ContactNumber = "123456789",
-                Currency = 0,
+                Currency = OrderCurrency.EUR,
                 Items = new List<CreateOrderItemDto>
                 {
                     new CreateOrderItemDto { ProductName = "Test Product", Quantity = 1, Price = 10 }
@@ -54,6 +56,78 @@ namespace DemoOrders.Tests.Controllers
             var returnedOrder = Assert.IsType<OrderDto>(okResult.Value);
             Assert.Equal("Test User", returnedOrder.CustomerName);
             Assert.Single(returnedOrder.Items);
+        }
+
+
+        // Test for CreateOrder action in OrderController with invalid model state returning BadRequest
+        [Fact]
+        public async Task CreateOrder_ReturnsBadRequest_WhenModelStateIsInvalid()
+        {
+            // Arrange
+            // 1. Mock the IOrderService and ILogger
+            var orderServiceMock = new Mock<IOrderService>();
+            // 2. Create the controller instance
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            // 3. Create the controller instance
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            // Simulate invalid model state (e.g. missing required CustomerName)
+            controller.ModelState.AddModelError("CustomerName", "Required");
+
+            var createOrderDto = new CreateOrderDto
+            {
+                // Create an invalid CreateOrderDto (e.g. missing CustomerName)
+                DeliveryAddress = "Test Address",
+                PaymentMethod = OrderPaymentMethod.Cash,
+                ContactNumber = "123456789",
+                Currency = OrderCurrency.EUR,
+                Items = new List<CreateOrderItemDto>
+                {
+                    new CreateOrderItemDto { ProductName = "Test", Quantity = 1, Price = 1 }
+                }
+            };
+
+            // Act
+            var result = await controller.CreateOrder(createOrderDto, CancellationToken.None);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
+
+
+        [Fact]
+        public async Task CreateOrder_ReturnsBadRequest_WhenServiceThrowsException()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            // Mockaj servis da baci iznimku
+            orderServiceMock
+                .Setup(s => s.CreateOrderAsync(It.IsAny<CreateOrderDto>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Service error"));
+
+            var createOrderDto = new CreateOrderDto
+            {
+                CustomerName = "Test User",
+                PaymentMethod = OrderPaymentMethod.Cash,
+                DeliveryAddress = "Test Address",
+                ContactNumber = "123456789",
+                Currency = OrderCurrency.EUR,
+                Items = new List<CreateOrderItemDto>
+                {
+                    new CreateOrderItemDto { ProductName = "Test Product", Quantity = 1, Price = 10 }
+                }
+            };
+
+            // Act
+            var result = await controller.CreateOrder(createOrderDto, CancellationToken.None);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Contains("Error has occured", badRequestResult.Value.ToString());
         }
     }
 }

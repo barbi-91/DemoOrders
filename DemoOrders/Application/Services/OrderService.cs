@@ -24,6 +24,10 @@ namespace DemoOrders.Application.Services
         {
             try
             {
+                // Validate that the order has at least one item
+                if (createOrderDto.Items == null || !createOrderDto.Items.Any())
+                    throw new Exception("Order must have at least one item.");
+
                 // Map the CreateOrderDto to an Order entity
                 Order createOrder = _mapper.Map<Order>(createOrderDto);
 
