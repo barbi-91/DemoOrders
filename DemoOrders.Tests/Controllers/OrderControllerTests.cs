@@ -95,7 +95,7 @@ namespace DemoOrders.Tests.Controllers
         }
 
 
-
+        // Test for When Service ThrowsException
         [Fact]
         public async Task CreateOrder_ReturnsBadRequest_WhenServiceThrowsException()
         {
@@ -104,7 +104,6 @@ namespace DemoOrders.Tests.Controllers
             var loggerMock = new Mock<ILogger<OrderController>>();
             var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
 
-            // Mockaj servis da baci iznimku
             orderServiceMock
                 .Setup(s => s.CreateOrderAsync(It.IsAny<CreateOrderDto>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Service error"));
@@ -128,6 +127,54 @@ namespace DemoOrders.Tests.Controllers
             // Assert
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Contains("Error has occured", badRequestResult.Value.ToString());
+        }
+
+
+        // Test for error handling when service throws excepti
+        [Fact]
+        public async Task GetAllOrders_ReturnsBadRequest_WhenServiceThrowsException()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            // Mock the service to throw an exception
+            orderServiceMock
+                .Setup(s => s.GetAllOrdersAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new System.Exception("Service error"));
+
+            // Act
+            var result = await controller.GetAllOrders(CancellationToken.None);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Contains("Error has occurred", badRequestResult.Value.ToString());
+        }
+
+
+        // Test for for empty order list
+
+        [Fact]
+        public async Task GetAllOrders_ReturnsOk_WithEmptyList()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            // Mock the service to return an empty list
+            orderServiceMock
+                .Setup(s => s.GetAllOrdersAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OrderDto>());
+
+            // Act
+            var result = await controller.GetAllOrders(CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedOrders = Assert.IsAssignableFrom<IEnumerable<OrderDto>>(okResult.Value);
+            Assert.Empty(returnedOrders);
         }
     }
 }
