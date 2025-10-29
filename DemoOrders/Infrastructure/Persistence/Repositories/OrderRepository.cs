@@ -1,6 +1,7 @@
 ﻿using DemoOrders.Application.Abstration.Repositories;
 using DemoOrders.Domain.Entities;
 using DemoOrders.Infrastructure.Persistence.AppDbContext;
+using Microsoft.EntityFrameworkCore;
 
 
 public class OrderRepository : IOrderRepository
@@ -21,6 +22,14 @@ public class OrderRepository : IOrderRepository
 
         // Return the created order entity with the generated ID
         return order;
+    }
+
+    // Get all orders asynchronously and return a IEnumerable of orders
+    public async Task<IEnumerable<Order>> GetAllOrdersAsync(CancellationToken cancellationToken)
+    {
+        return await _context.Orders
+            .Include(o => o.Items)
+            .ToListAsync(cancellationToken);
     }
 }
 

@@ -48,5 +48,24 @@ namespace DemoOrders.API.Controllers
                 return BadRequest(new { errorMessage = "Error has occured!" });
             }
         }
+
+        // Get all orders
+        [HttpGet]
+        // api/order/GetAllOrders
+        [Route("GetAllOrders")]
+        public async Task<IActionResult> GetAllOrders(CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching all orders.");
+                var orders = await _orderService.GetAllOrdersAsync(cancellationToken);
+                return Ok(orders);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching all orders.");
+                return BadRequest(new { errorMessage = "Error has occurred while fetching orders!" });
+            }
+        }
     }
 }

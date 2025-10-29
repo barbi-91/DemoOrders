@@ -51,5 +51,13 @@ namespace DemoOrders.Application.Services
                 throw;
             }
         }
+
+        // Get all orders asynchronously and return a IEnumerable of OrderDto, converting between entities and DTOs
+        public async Task<IEnumerable<OrderDto>> GetAllOrdersAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Fetching all orders from the database.");
+            var orders = await _repository.GetAllOrdersAsync(cancellationToken);
+            return _mapper.Map<IEnumerable<OrderDto>>(orders);
+        }
     }
 }
