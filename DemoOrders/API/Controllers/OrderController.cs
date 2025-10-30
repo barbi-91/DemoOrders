@@ -38,6 +38,11 @@ namespace DemoOrders.API.Controllers
 
             try
             {
+                if (createOrderDto.Items == null || !createOrderDto.Items.Any())
+                {
+                    _logger.LogWarning("Attempted to create order with no items for customer {CustomerName}", createOrderDto.CustomerName);
+                    return BadRequest(new { errorMessage = "Order must have at least one item." });
+                }
                 var orderDto = await _orderService.CreateOrderAsync(createOrderDto, cancellationToken);
                 _logger.LogInformation("Order created successfully for customer {CustomerName} with ID {OrderId}", orderDto.CustomerName, orderDto.Id);
                 return Ok(orderDto);
@@ -59,6 +64,11 @@ namespace DemoOrders.API.Controllers
             {
                 _logger.LogInformation("Fetching all orders.");
                 var orders = await _orderService.GetAllOrdersAsync(cancellationToken);
+                if (orders == null || !orders.Any())
+                {
+                    _logger.LogInformation("No orders found in the database.");
+                    return NotFound(new { message = "No orders found." });
+                }
                 return Ok(orders);
             }
             catch (Exception ex)
@@ -67,5 +77,42 @@ namespace DemoOrders.API.Controllers
                 return BadRequest(new { errorMessage = "Error has occurred while fetching orders!" });
             }
         }
+
+        // Update order status by Id 
+        [HttpPatch("{orderId}/status")]
+        // api/order/UpdateOrderStatus/3/status
+        [Route("UpdateOrderStatus/{orderId}/status")]
+        public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] OrderStatus orderStatus, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (ModelState.IsValid == false)
+                {
+                    _logger.LogWarning("Invalid model state for updating order status: {@ModelState}", ModelState);
+                    return BadRequest(ModelState);
+                }
+                // Validate order status value 
+                if (!Enum.IsDefined(typeof(OrderStatus), orderStatus))
+                {
+                    _logger.LogWarning("Invalid order status value: {OrderStatus}", orderStatus);
+                    return BadRequest(new { message = "Invalid order status." });
+                }
+                // Update the order status
+                OrderDto? updatedOrder = await _orderService.UpdateOrderStatusAsync(orderId, orderStatus, cancellationToken);
+                if (updatedOrder == null)
+                {
+                    _logger.LogWarning("Order with ID {OrderId} not found for status update.", orderId);
+                    return NotFound(new { message = "Order not found." });
+                }
+                _logger.LogInformation("Order ID {OrderId} status updated to {OrderStatus}.", orderId, orderStatus);
+                return Ok(updatedOrder);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating status for order ID {OrderId}", orderId);
+                return BadRequest(new { errorMessage = "Error has occurred while updating order status!" });
+            }
+        }
     }
 }
+

@@ -59,5 +59,27 @@ namespace DemoOrders.Application.Services
             var orders = await _repository.GetAllOrdersAsync(cancellationToken);
             return _mapper.Map<IEnumerable<OrderDto>>(orders);
         }
+
+        // Update the status of an existing order asynchronously and return the updated OrderDto by its ID, converting between DTOs and entities
+        public async Task<OrderDto?> UpdateOrderStatusAsync(int orderId, OrderStatus status, CancellationToken cancellationToken)
+        {
+            try
+            {
+                Order? updatedOrder = await _repository.UpdateOrderStatusAsync(orderId, status, cancellationToken);
+                if (updatedOrder == null) // Order not found
+                {
+                    _logger.LogWarning("Order with ID {OrderId} not found for status update.", orderId);
+                    return null;
+                }
+                OrderDto updatedOrderDto = _mapper.Map<OrderDto>(updatedOrder);
+                _logger.LogInformation("Order with ID {OrderId} updated successfully to status {Status}.", orderId, status);
+                return updatedOrderDto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating status for order ID {OrderId}", orderId);
+                throw;
+            }
+        }
     }
 }
