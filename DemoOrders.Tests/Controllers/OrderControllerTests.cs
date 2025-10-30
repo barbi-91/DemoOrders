@@ -95,7 +95,7 @@ namespace DemoOrders.Tests.Controllers
         }
 
 
-        // Test for When Service ThrowsException
+        // Test for CreateOrder when Service Throws Exception
         [Fact]
         public async Task CreateOrder_ReturnsBadRequest_WhenServiceThrowsException()
         {
@@ -130,7 +130,7 @@ namespace DemoOrders.Tests.Controllers
         }
 
 
-        // Test for error handling when service throws excepti
+        // Test in GetAllOrders action for error handling when service throws exception 
         [Fact]
         public async Task GetAllOrders_ReturnsBadRequest_WhenServiceThrowsException()
         {
@@ -153,7 +153,7 @@ namespace DemoOrders.Tests.Controllers
         }
 
 
-        // Test for for empty order list
+        // Test in GetAllOrders action for empty order list
 
         [Fact]
         public async Task GetAllOrders_ReturnsOk_WithEmptyList()
@@ -175,6 +175,61 @@ namespace DemoOrders.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(result);
             var returnedOrders = Assert.IsAssignableFrom<IEnumerable<OrderDto>>(okResult.Value);
             Assert.Empty(returnedOrders);
+        }
+
+
+        // Test in GetAllOrders action for testing successful retrieval with status Ok 
+        [Fact]
+        public async Task GetAllOrders_ReturnsOk_WithOrders()
+        {
+            // Arrange
+            // 1. Mock the IOrderService
+            var orderServiceMock = new Mock<IOrderService>();
+            // 2. Mock the logger for OrderController 
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            // 3. Create an instance of OrderController with the mocked service and logger
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+            // 4. Setup the mock to return a list of OrderDto when GetAllOrdersAsync is called
+            var ordersList = new List<OrderDto>
+            {
+                new OrderDto
+                {
+                    Id = 1,
+                    CustomerName = "Test User 1",
+                    Items = new List<OrderItemDto>
+                    {
+                        new OrderItemDto { Id = 1, ProductName = "Product 1", Quantity = 2, Price = 50 }
+                    }
+                },
+                new OrderDto
+                {
+                    Id = 2,
+                    CustomerName = "Test User 2",
+                    Items = new List<OrderItemDto>
+                    {
+                        new OrderItemDto { Id = 2, ProductName = "Product 2", Quantity = 1, Price = 30 }
+                    }
+                }
+            };
+            // Set up the mock to return the orders list
+            orderServiceMock
+                .Setup(s => s.GetAllOrdersAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ordersList);
+
+            // Act
+            var result = await controller.GetAllOrders(CancellationToken.None);
+
+            // Assert
+            // 1. Verify that the result is OkObjectResult
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            // 2. Verify that the returned value is a list of OrderDto with correct data
+            var returnedOrders = Assert.IsAssignableFrom<IEnumerable<OrderDto>>(okResult.Value);
+            // 3. Verify the contents of the returned orders
+            Assert.Equal(2, returnedOrders.Count());
+            // 4. Verify specific order details
+            Assert.Contains(returnedOrders, o => o.CustomerName == "Test User 1");
+            // 5. Verify specific order details
+            Assert.Contains(returnedOrders, o => o.CustomerName == "Test User 2");
         }
     }
 }

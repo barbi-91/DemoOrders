@@ -29,6 +29,7 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.Orders
             .Include(o => o.Items)
+            .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
 }
