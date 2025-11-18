@@ -156,7 +156,7 @@ namespace DemoOrders.Tests.Controllers
         // Test in GetAllOrders action for empty order list
 
         [Fact]
-        public async Task GetAllOrders_ReturnsOk_WithEmptyList()
+        public async Task GetAllOrders_ReturnsNotFoundResult_WithEmptyList()
         {
             // Arrange
             var orderServiceMock = new Mock<IOrderService>();
@@ -172,9 +172,8 @@ namespace DemoOrders.Tests.Controllers
             var result = await controller.GetAllOrders(CancellationToken.None);
 
             // Assert
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            var returnedOrders = Assert.IsAssignableFrom<IEnumerable<OrderDto>>(okResult.Value);
-            Assert.Empty(returnedOrders);
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("No orders found.", notFoundResult.Value.GetType().GetProperty("message")?.GetValue(notFoundResult.Value));
         }
 
 
@@ -231,6 +230,76 @@ namespace DemoOrders.Tests.Controllers
             // 5. Verify specific order details
             Assert.Contains(returnedOrders, o => o.CustomerName == "Test User 2");
         }
+
+        // Test for UpdateOrderStatus action in OrderController with mocked IOrderService and ILogger and verifying Ok result
+        [Fact]
+        public async Task UpdateOrderStatus_ReturnsOk_WhenOrderIsUpdated()
+        {
+            // Arrange 
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+            var updatedOrder = new OrderDto
+            {
+                Id = 1,
+                CustomerName = "Updated User Test",
+                Status = OrderStatus.Completed,
+                Items = new List<OrderItemDto>
+                {
+                    new OrderItemDto { Id = 1, ProductName = "Updated Product", Quantity = 2, Price = 20 }
+                }
+            };
+
+            orderServiceMock
+                .Setup(s => s.UpdateOrderStatusAsync(1, OrderStatus.Completed, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(updatedOrder);
+
+            // Act
+            var result = await controller.UpdateOrderStatus(1, OrderStatus.Completed, CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedOrder = Assert.IsType<OrderDto>(okResult.Value);
+            Assert.Equal(OrderStatus.Completed, returnedOrder.Status);
+        }
+
+        [Fact]
+        public async Task UpdateOrderStatus_ReturnsNotFound_WhenOrderDoesNotExist()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            orderServiceMock
+                .Setup(s => s.UpdateOrderStatusAsync(1, OrderStatus.Completed, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((OrderDto?)null);
+
+            // Act
+            var result = await controller.UpdateOrderStatus(1, OrderStatus.Completed, CancellationToken.None);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Order not found.", notFoundResult.Value.GetType().GetProperty("message")?.GetValue(notFoundResult.Value));
+        }
+
+        [Fact]
+        public async Task UpdateOrderStatus_ReturnsBadRequest_WhenModelStateIsInvalid()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            controller.ModelState.AddModelError("Status", "Required");
+
+            // Act
+            var result = await controller.UpdateOrderStatus(1, OrderStatus.Completed, CancellationToken.None);
+
+            // Assert
+            Assert.IsType<BadRequestObjectResult>(result);
+        }
+
     }
 }
 

@@ -79,7 +79,7 @@ namespace DemoOrders.API.Controllers
         }
 
         // Update order status by Id 
-        [HttpPatch("{orderId}/status")]
+        [HttpPatch]
         // api/order/UpdateOrderStatus/3/status
         [Route("UpdateOrderStatus/{orderId}/status")]
         public async Task<IActionResult> UpdateOrderStatus(int orderId, [FromBody] OrderStatus orderStatus, CancellationToken cancellationToken)

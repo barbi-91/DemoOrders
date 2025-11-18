@@ -121,6 +121,32 @@ namespace DemoOrders.Tests.Services
                 orderService.CreateOrderAsync(createOrderDto, CancellationToken.None));
         }
 
+        [Fact]
+        public async Task UpdateOrderStatusAsync_ReturnsOrderDto_WhenOrderIsUpdated()
+        {
+            // Arrange
+            var repoMock = new Mock<IOrderRepository>();
+            var loggerMock = new Mock<ILogger<OrderService>>();
+            var config = new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>());
+            var mapper = config.CreateMapper();
 
+            var order = new Order { Id = 1, Status = OrderStatus.Completed, CustomerName = "Test User" };
+            var orderDto = new OrderDto { Id = 1, Status = OrderStatus.Completed, CustomerName = "Test User" };
+
+            repoMock
+                .Setup(r => r.UpdateOrderStatusAsync(1, OrderStatus.Completed, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(order);
+
+            var service = new OrderService(repoMock.Object, mapper, loggerMock.Object);
+
+            // Act
+            var result = await service.UpdateOrderStatusAsync(1, OrderStatus.Completed, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(orderDto.Id, result.Id);
+            Assert.Equal(orderDto.Status, result.Status);
+            Assert.Equal(orderDto.CustomerName, result.CustomerName);
+        }
     }
 }
