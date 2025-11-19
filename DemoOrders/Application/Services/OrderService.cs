@@ -81,5 +81,19 @@ namespace DemoOrders.Application.Services
                 throw;
             }
         }
+
+        // Get Total Amount by order id
+        public async Task<decimal> GetTotalAmountByOrderIdAsync(int orderId, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Calculating total amount for order ID {OrderId}.", orderId);
+            Order? order = await _repository.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                _logger.LogWarning("Order with ID {OrderId} not found for total amount calculation.", orderId);
+                return 0m;
+            }
+            _logger.LogInformation("Total amount for order ID {OrderId} is {TotalAmount}.", orderId, order.TotalAmount);
+            return order.TotalAmount;
+        }
     }
 }

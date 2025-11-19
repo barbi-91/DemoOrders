@@ -113,6 +113,30 @@ namespace DemoOrders.API.Controllers
                 return BadRequest(new { errorMessage = "Error has occurred while updating order status!" });
             }
         }
+
+        // Get Total Amount by order id 
+        [HttpGet]
+        // api/order/GetTotalAmountByOrderId/3
+        [Route("GetTotalAmountByOrderId/{orderId}")]
+        public async Task<IActionResult> GetTotalAmountByOrderId(int orderId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger.LogInformation("Calculating total amount for order ID {OrderId}.", orderId);
+                decimal totalAmount = await _orderService.GetTotalAmountByOrderIdAsync(orderId, cancellationToken);
+                if (totalAmount == 0m)
+                {
+                    _logger.LogWarning("Order with ID {OrderId} not found or has no items.", orderId);
+                    return NotFound(new { message = "Order not found or has no items." });
+                }
+                return Ok(new { OrderId = orderId, TotalAmount = totalAmount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while calculating total amount for order ID {OrderId}", orderId);
+                return BadRequest(new { errorMessage = "Error has occurred while calculating total amount!" });
+            }
+        }
     }
 }
 

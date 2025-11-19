@@ -13,5 +13,8 @@ namespace DemoOrders.Application.Abstration.Service
 
         // Update the status of an existing order asynchronously and return the updated OrderDto by its ID, converting between DTOs and entities
         Task<OrderDto?> UpdateOrderStatusAsync(int orderId, OrderStatus status, CancellationToken cancellationToken);
+
+        // Get Total Amount by order id 
+        Task<decimal> GetTotalAmountByOrderIdAsync(int orderId, CancellationToken cancellationToken);
     }
 }
