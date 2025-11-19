@@ -137,6 +137,28 @@ namespace DemoOrders.API.Controllers
                 return BadRequest(new { errorMessage = "Error has occurred while calculating total amount!" });
             }
         }
+
+        // Sort orders by Total Amount 
+        [HttpGet("sorted-by-total")]
+        // api/order/GetOrdersSortedByTotalAmount
+        public async Task<IActionResult> GetOrdersSortedByTotalAmount(CancellationToken cancellationToken)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching orders sorted by total amount.");
+                IEnumerable<OrderDto> sortedOrders = await _orderService.GetOrdersSortedByTotalAmountAsync(cancellationToken);
+                if (sortedOrders == null || !sortedOrders.Any())
+                {
+                    _logger.LogInformation("No orders found to sort by total amount.");
+                    return NotFound(new { message = "No orders found." });
+                }
+                return Ok(sortedOrders);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching orders sorted by total amount.");
+                return BadRequest(new { errorMessage = "Error has occurred while fetching sorted orders!" });
+            }
+        }
     }
-}
 

@@ -95,5 +95,15 @@ namespace DemoOrders.Application.Services
             _logger.LogInformation("Total amount for order ID {OrderId} is {TotalAmount}.", orderId, order.TotalAmount);
             return order.TotalAmount;
         }
+
+
+        // Sort orders by Total Amount
+        public async Task<IEnumerable<OrderDto>> GetOrdersSortedByTotalAmountAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Fetching and sorting orders by total amount.");
+            IEnumerable<Order> orders = await _repository.GetAllOrdersAsync(cancellationToken);
+            List<Order> sortedOrders = orders.OrderBy(o => o.TotalAmount).ToList();
+            return _mapper.Map<IEnumerable<OrderDto>>(sortedOrders);
+        }
     }
 }

@@ -16,5 +16,8 @@ namespace DemoOrders.Application.Abstration.Service
 
         // Get Total Amount by order id 
         Task<decimal> GetTotalAmountByOrderIdAsync(int orderId, CancellationToken cancellationToken);
+
+        // Sort orders by Total Amount
+        Task<IEnumerable<OrderDto>> GetOrdersSortedByTotalAmountAsync(CancellationToken cancellationToken);
     }
 }
