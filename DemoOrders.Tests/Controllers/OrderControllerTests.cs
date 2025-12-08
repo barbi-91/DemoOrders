@@ -263,6 +263,7 @@ namespace DemoOrders.Tests.Controllers
             Assert.Equal(OrderStatus.Completed, returnedOrder.Status);
         }
 
+        // Test for UpdateOrderStatus action in OrderController returning NotFound when order does not exist
         [Fact]
         public async Task UpdateOrderStatus_ReturnsNotFound_WhenOrderDoesNotExist()
         {
@@ -283,6 +284,8 @@ namespace DemoOrders.Tests.Controllers
             Assert.Equal("Order not found.", notFoundResult.Value.GetType().GetProperty("message")?.GetValue(notFoundResult.Value));
         }
 
+
+        // Test for UpdateOrderStatus action in OrderController with invalid model state returning BadRequest
         [Fact]
         public async Task UpdateOrderStatus_ReturnsBadRequest_WhenModelStateIsInvalid()
         {
@@ -300,7 +303,150 @@ namespace DemoOrders.Tests.Controllers
             Assert.IsType<BadRequestObjectResult>(result);
         }
 
+        // Test for GetTotalAmountByOrderId action in OrderController returning Ok with total amount
+        [Fact]
+        public async Task GetTotalAmountByOrderId_ReturnsOk_WhenOrderExists()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            int orderId = 1;
+            decimal totalAmount = 150.75m;
+
+            orderServiceMock
+                .Setup(s => s.GetTotalAmountByOrderIdAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(totalAmount);
+
+            // Act
+            var result = await controller.GetTotalAmountByOrderId(orderId, CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var value = okResult.Value;
+            Assert.Equal(orderId, (int)value.GetType().GetProperty("OrderId")?.GetValue(value));
+            Assert.Equal(totalAmount, (decimal)value.GetType().GetProperty("TotalAmount")?.GetValue(value));
+        }
+
+        // Test for GetTotalAmountByOrderId action in OrderController returning NotFound when order does not exist or has no items
+        [Fact]
+        public async Task GetTotalAmountByOrderId_ReturnsNotFound_WhenOrderDoesNotExistOrHasNoItems()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            int orderId = 99;
+            orderServiceMock
+                .Setup(s => s.GetTotalAmountByOrderIdAsync(orderId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0m);
+
+            // Act
+            var result = await controller.GetTotalAmountByOrderId(orderId, CancellationToken.None);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("Order not found or has no items.", notFoundResult.Value.GetType().GetProperty("message")?.GetValue(notFoundResult.Value));
+        }
+
+
+        //  Test for GetTotalAmountByOrderId action in OrderController returning BadRequest when service throws exception
+        [Fact]
+        public async Task GetTotalAmountByOrderId_ReturnsBadRequest_WhenServiceThrowsException()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            int orderId = 1;
+            orderServiceMock
+                .Setup(s => s.GetTotalAmountByOrderIdAsync(orderId, It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Service error"));
+
+            // Act
+            var result = await controller.GetTotalAmountByOrderId(orderId, CancellationToken.None);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Contains("Error has occurred while calculating total amount", badRequestResult.Value.ToString());
+        }
+
+        // Test for GetOrdersSortedByTotalAmount action in OrderController returning Ok with sorted orders
+        [Fact]
+        public async Task GetOrdersSortedByTotalAmount_ReturnsOk_WhenOrdersExist()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            var sortedOrders = new List<OrderDto>
+            {
+                new OrderDto { Id = 1, CustomerName = "A", Items = new List<OrderItemDto>() },
+                new OrderDto { Id = 2, CustomerName = "B", Items = new List<OrderItemDto>() }
+            };
+
+            orderServiceMock
+                .Setup(s => s.GetOrdersSortedByTotalAmountAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(sortedOrders);
+
+            // Act
+            var result = await controller.GetOrdersSortedByTotalAmount(CancellationToken.None);
+
+            // Assert
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var returnedOrders = Assert.IsAssignableFrom<IEnumerable<OrderDto>>(okResult.Value);
+            Assert.Equal(2, returnedOrders.Count());
+        }
+
+        // Test for GetOrdersSortedByTotalAmount action in OrderController returning NotFound when no orders exist
+        [Fact]
+        public async Task GetOrdersSortedByTotalAmount_ReturnsNotFound_WhenNoOrdersExist()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            orderServiceMock
+                .Setup(s => s.GetOrdersSortedByTotalAmountAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<OrderDto>());
+
+            // Act
+            var result = await controller.GetOrdersSortedByTotalAmount(CancellationToken.None);
+
+            // Assert
+            var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+            Assert.Equal("No orders found.", notFoundResult.Value.GetType().GetProperty("message")?.GetValue(notFoundResult.Value));
+        }
+
+        // Test for GetOrdersSortedByTotalAmount action in OrderController returning BadRequest when service throws exception
+        [Fact]
+        public async Task GetOrdersSortedByTotalAmount_ReturnsBadRequest_WhenServiceThrowsException()
+        {
+            // Arrange
+            var orderServiceMock = new Mock<IOrderService>();
+            var loggerMock = new Mock<ILogger<OrderController>>();
+            var controller = new OrderController(orderServiceMock.Object, loggerMock.Object);
+
+            orderServiceMock
+                .Setup(s => s.GetOrdersSortedByTotalAmountAsync(It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new Exception("Service error"));
+
+            // Act
+            var result = await controller.GetOrdersSortedByTotalAmount(CancellationToken.None);
+
+            // Assert
+            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Contains("Error has occurred while fetching sorted orders", badRequestResult.Value.ToString());
+        }
     }
+
+
+
 }
 
 
